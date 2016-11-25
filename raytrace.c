@@ -38,8 +38,6 @@ int main(int argc, char** argv) {
 
 
     read_scene(json);
-
-
     raycast(json);
 
 //checking if output file is correct
@@ -129,6 +127,7 @@ void raycast(FILE* json) {
 
 
 double* illuminate(double* Rd, double* Ro, Object closest_object) {
+    //setting current color to black then adding to it
     double* current_color = malloc(sizeof(double)*3);
     current_color[0] = 0;
     current_color[1] = 0;
@@ -145,7 +144,7 @@ double* illuminate(double* Rd, double* Ro, Object closest_object) {
     v3_subtract(camera.position, pixel_position, obj_to_cam);
     normalize(obj_to_cam);
 
-
+    //getting normal
     double N[3];
     if (closest_object.kind == 0) {
         v3_subtract(pixel_position, closest_object.position, N);
@@ -176,21 +175,20 @@ double* illuminate(double* Rd, double* Ro, Object closest_object) {
         // find distance from the light to the object
         double dl = sqrt(sqr(pixel_position[0]-current_light->position[0]) + sqr(pixel_position[1]-current_light->position[1]) + sqr(pixel_position[2]-current_light->position[2]));
 
-        // boolean that tells if object is in a shadow
+        //checking if object is in shadow
         int in_shadow = 0;
         for (int k=0; objects[k] != NULL; k++) {
             current_object = objects[k];
-            // skip checking for intersection with the object already being looked at
+            //if object is current object then skip it
             if (equals(*current_object, closest_object))
                 continue;
 
             double* offset = malloc(sizeof(double)*3);
             v3_scale(obj_to_light, EPSILON, offset);
             v3_add(offset, pixel_position, offset);
-            // find new intersection between light and each object looking for one that is closer to the light
-            // and casts a shadow on the closest object to the camera at this pixel
+            //moving to avoid spots
             new_t=shoot(obj_to_light,offset,*current_object);
-
+            //intersection
 
 
             if (new_t > 0 && new_t <= dl) {
@@ -199,42 +197,36 @@ double* illuminate(double* Rd, double* Ro, Object closest_object) {
             }
         }
 
-
+        //if its not in shadow
         if (in_shadow == 0) {
             double R[3];
 			reflect(light_to_obj,N,R);
             normalize(R);
 
-
-
-
             double* light_direction = current_light->direction;
             normalize(light_direction);
 
-
+            //getting diffuse color
             double diffuse_color[3];
 			vector_copy(closest_object.diffuse,diffuse_color);
 			diffuseReflection(N,obj_to_light,current_light->color,diffuse_color);
 
-
-
+            //getting specular color
             double specular_color[3];
 			vector_copy(closest_object.specular,specular_color);
 			specularReflection(20,obj_to_light,R,N,obj_to_cam,current_light->color,specular_color);
 
-
-
-
+            //calculating frad and fang
             double rad = frad(dl, current_light->radA0, current_light->radA1, current_light->radA2);
             double ang = fang(light_direction, light_to_obj, current_light->angA0, current_light->theta);
 
-
+            //getting final color
             current_color[0] += rad * ang * (diffuse_color[0] + specular_color[0]);
             current_color[1] += rad * ang * (diffuse_color[1] + specular_color[1]);
             current_color[2] += rad * ang * (diffuse_color[2] + specular_color[2]);
         }
     }
-
+    //returning final color
     return current_color;
 }
 
@@ -243,24 +235,23 @@ double* shade(Object current_object, double* rd, double* ro, int level, double i
     color[0] = 0;
     color[1] = 0;
     color[2] = 0;
-
+    //if it recurses 7times end it
     if (level == 7) {
         return color;
     }
-
+    //adding illumiation color
     v3_add(color, illuminate(rd, ro, current_object), color);
 
     double N[3];
     if (current_object.kind == 0) {
         v3_subtract(ro, current_object.position, N);
     } else {
-        N[0] = current_object.plane.normal[0];
-        N[1] = current_object.plane.normal[1];
-        N[2] = current_object.plane.normal[2];
+        vector_copy(current_object.plane.normal,N);
     }
     normalize(N);
 
     if (current_object.reflectivity > 0) {
+        //getting reflected ray
         double reflected_ray[3];
 		reflect(rd,N,reflected_ray);
 
@@ -270,7 +261,6 @@ double* shade(Object current_object, double* rd, double* ro, int level, double i
         Object* closest_object;
 
         for (int i=0; objects[i] != NULL; i++) {
-
             if (equals(current_object, *objects[i]))
                 continue;
 
@@ -293,27 +283,28 @@ double* shade(Object current_object, double* rd, double* ro, int level, double i
 
             double* reflected_color = malloc(sizeof(double)*3);
             v3_scale(shade(*closest_object, reflected_ray, Ron, level+1, current_object.ior), current_object.reflectivity, reflected_color);
-
+            //adding reflected color to overall color
             v3_add(color, reflected_color, color);
         }
     }
 
     if (current_object.refractivity > 0) {
         double* refracted_ray = refraction(ior, current_object.ior, rd, N);
-
+        //scaling by epsilon to avoid spots
         double* offset = malloc(sizeof(double)*3);
         v3_scale(refracted_ray, EPSILON, offset);
         v3_add(offset, ro, offset);
 
         double d;
         d=shoot(refracted_ray,offset,current_object);
-
+        //geting intersection
 
         double* back = malloc(sizeof(double)*3);
         v3_scale(refracted_ray, d, back);
         v3_add(ro, back, back);
 
         double* back_normal = malloc(sizeof(double)*3);
+        //getting normal back
         if (current_object.kind == 0) {
             v3_subtract(back, current_object.position, back_normal);
         } else if (current_object.kind == 1) {
@@ -323,7 +314,7 @@ double* shade(Object current_object, double* rd, double* ro, int level, double i
         normalize(back_normal);
 
         double* next_ray = refraction(current_object.ior, 1.0, refracted_ray, back_normal);
-
+        /
         double best_t = INFINITY;
         Object* closest_object;
         for (int i=0; objects[i] != NULL; i++) {
@@ -334,7 +325,7 @@ double* shade(Object current_object, double* rd, double* ro, int level, double i
             double* offset = malloc(sizeof(double)*3);
             v3_scale(refracted_ray, EPSILON, offset);
             v3_add(offset, ro, offset);
-
+            //getting intersection
             double t = 0;
             t=shoot(next_ray,offset,*objects[i]);
 
@@ -353,7 +344,7 @@ double* shade(Object current_object, double* rd, double* ro, int level, double i
 
             double* refracted_color = malloc(sizeof(double)*3);
             v3_scale(shade(*closest_object, next_ray, Ron, level+1, current_object.ior), current_object.reflectivity, refracted_color);
-
+            //adding refracted color to total color
             v3_add(color, direct_shade(*closest_object, Ron, refracted_color, next_ray, back), color);
             v3_add(color, refracted_color, color);
         }
@@ -369,6 +360,7 @@ double* direct_shade(Object current_object, double* pixel_position, double* ligh
     color[1] = 0;
     color[2] = 0;
 
+    //getting normal
     double* N = malloc(sizeof(double)*3);
     if (current_object.kind == 0)
         v3_subtract(pixel_position, current_object.position, N);
@@ -389,18 +381,17 @@ double* direct_shade(Object current_object, double* pixel_position, double* ligh
 	reflect(light_direction,N,R);
 
     normalize(R);
-
+    //calculating diffuse
     double diffuse_color[3];
 	vector_copy(current_object.diffuse,diffuse_color);
 	diffuseReflection(N,obj_to_light,light_color,diffuse_color);
 
-
-
+    //calculating specular
     double specular_color[3];
 	vector_copy(current_object.specular,specular_color);
 	specularReflection(20,obj_to_light,R,N,obj_to_cam,light_color,specular_color);
 
-
+    //getting diffuse and specular and sending them back for calculating reflection and refraction colors
     color[0] += (diffuse_color[0] + specular_color[0]);
     color[1] += (diffuse_color[1] + specular_color[1]);
     color[2] += (diffuse_color[2] + specular_color[2]);
