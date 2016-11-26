@@ -1,17 +1,10 @@
 void read_scene(FILE* json) {
-
 	int c;
-
-
 	skip_ws(json);
 	expect_c(json, '[');
 	skip_ws(json);
-
-
 	int object_index = 0;
 	int light_index = 0;
-
-
 	while (1) {
 		c = next_c(json);
 
@@ -136,6 +129,7 @@ void parse_sphere(FILE* json, Object* object) {
 	int hasradius = 0;
 	int hascolor = 0;
 	int hasposition = 0;
+	int hasspecular = 0;
 
 
 	object->kind = 0;
@@ -180,6 +174,7 @@ void parse_sphere(FILE* json, Object* object) {
 				object->specular[0] = value[0];
 				object->specular[1] = value[1];
 				object->specular[2] = value[2];
+				hasspecular=1;
 			} else if (strcmp(key, "position") == 0) {
 				double* value = next_vector(json);
 				object->position[0] = value[0];
@@ -208,6 +203,10 @@ void parse_sphere(FILE* json, Object* object) {
 		fprintf(stderr, "Error: Sphere missing 'position' field. (Line %d)\n", line);
 		exit(1);
 	}
+	if (!hasspecular){
+		fprintf(stderr,"Error: Sphere missing 'specular field (Line %d)\n'",line);
+		exit(1);
+	}
 }
 
 // gets plane information and stores it into an object
@@ -216,14 +215,16 @@ void parse_plane(FILE* json, Object* object) {
 
 	// used to check that all fields for a plane are present
 	int hasnormal = 0;
-	int hascolor = 0;
+	int hasdiffuse = 0;
 	int hasposition = 0;
+	int hasspecular =0;
 
 	// set object kind to plane
 	object->kind = 1;
 	object->reflectivity = 0;
 	object->refractivity = 0;
 	object->ior = 1;
+
 
 	skip_ws(json);
 
@@ -252,12 +253,13 @@ void parse_plane(FILE* json, Object* object) {
 				object->diffuse[0] = value[0];
 				object->diffuse[1] = value[1];
 				object->diffuse[2] = value[2];
-				hascolor = 1;
+				hasdiffuse = 1;
 			} else if (strcmp(key, "specular_color") == 0) {
 				double* value = next_vector(json);
 				object->specular[0] = value[0];
 				object->specular[1] = value[1];
 				object->specular[2] = value[2];
+				hasspecular=1;
 			} else if (strcmp(key, "position") == 0) {
 				double* value = next_vector(json);
 				object->position[0] = value[0];
@@ -283,13 +285,17 @@ void parse_plane(FILE* json, Object* object) {
 		exit(1);
 	}
 
-	if (!hascolor) {
-		fprintf(stderr, "Error: Plane missing 'color' field. (Line %d)\n", line);
+	if (!hasdiffuse) {
+		fprintf(stderr, "Error: Plane missing 'diffuse' field. (Line %d)\n", line);
 		exit(1);
 	}
 
 	if (!hasposition) {
 		fprintf(stderr, "Error: Plane missing 'position' field. (Line %d)\n", line);
+		exit(1);
+	}
+	if (!hasspecular){
+		fprintf(stderr,"Error: Plane missing 'specular field (Line %d)\n'",line);
 		exit(1);
 	}
 }
