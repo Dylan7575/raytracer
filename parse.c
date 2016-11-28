@@ -154,7 +154,6 @@ void parse_sphere(FILE* json, Object* object) {
 
 	skip_ws(json);
 
-	// check fields for this sphere
 	while(1) {
 		c = next_c(json);
 		if (c == '}') {
@@ -167,7 +166,6 @@ void parse_sphere(FILE* json, Object* object) {
 			expect_c(json, ':');
 			skip_ws(json);
 
-			// set values for this sphere depending on what key was read and sets its 'boolean' to reflect the found field
 			if (strcmp(key, "radius") == 0) {
 				object->sphere.radius = next_number(json);
 				hasradius = 1;
@@ -202,7 +200,7 @@ void parse_sphere(FILE* json, Object* object) {
 		}
 	}
 
-	// check for missing fields
+
 	if (!hasradius) {
 		fprintf(stderr, "Error: Sphere missing 'radius' field. (Line %d)\n", line);
 		exit(1);
@@ -223,17 +221,17 @@ void parse_sphere(FILE* json, Object* object) {
 	}
 }
 
-// gets plane information and stores it into an object
+
 void parse_plane(FILE* json, Object* object) {
 	int c;
 
-	// used to check that all fields for a plane are present
+
 	int hasnormal = 0;
 	int hasdiffuse = 0;
 	int hasposition = 0;
 	int hasspecular =0;
 
-	// set object kind to plane
+
 	object->kind = 1;
 	object->reflectivity = 0;
 	object->refractivity = 0;
@@ -242,7 +240,7 @@ void parse_plane(FILE* json, Object* object) {
 
 	skip_ws(json);
 
-	// check fields for this plane
+
 	while(1) {
 		c = next_c(json);
 		if (c == '}') {

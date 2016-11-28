@@ -4,7 +4,7 @@
 
 
 int main(int argc, char** argv) {
-    //checking if aount of arguments is correct
+    //checking if amount of arguments is correct
     if (argc != 5) {
         fprintf(stderr, "Error need to enter height width source.json output.ppm\n");
         exit(1);
@@ -145,7 +145,7 @@ double* illuminate(double* Rd, double* Ro, Object closest_object) {
     v3_subtract(camera.position, pixel_position, obj_to_cam);
     normalize(obj_to_cam);
 
-    //getting normal
+//finding normal
     double N[3];
     if (closest_object.kind == 0) {
         v3_subtract(pixel_position, closest_object.position, N);
@@ -160,36 +160,37 @@ double* illuminate(double* Rd, double* Ro, Object closest_object) {
     Light* current_light;
     Object* current_object;
     double new_t = 0;
+	//looping through lights
     for (int j=0; lights[j] != NULL; j++) {
         current_light = lights[j];
 
-        // find vector from light to the object
+
         double light_to_obj[3];
         v3_subtract(pixel_position, current_light->position, light_to_obj);
         normalize(light_to_obj);
 
-        // find vector from the object to the light
+
         double obj_to_light[3];
         v3_subtract(current_light->position, pixel_position, obj_to_light);
         normalize(obj_to_light);
 
-        // find distance from the light to the object
+		//finding distance of ray from light to objects
         double dl = sqrt(sqr(pixel_position[0]-current_light->position[0]) + sqr(pixel_position[1]-current_light->position[1]) + sqr(pixel_position[2]-current_light->position[2]));
 
-        //checking if object is in shadow
+
         int in_shadow = 0;
+		//seeing is object is in shadow
         for (int k=0; objects[k] != NULL; k++) {
-            current_object = objects[k];
-            //if object is current object then skip it
+
             if (equals(*current_object, closest_object))
                 continue;
 
             double* offset = malloc(sizeof(double)*3);
             v3_scale(obj_to_light, EPSILON, offset);
             v3_add(offset, pixel_position, offset);
-            //moving to avoid spots
+
             new_t=shoot(obj_to_light,offset,*current_object);
-            //intersection
+
 
 
             if (new_t > 0 && new_t <= dl) {
@@ -198,7 +199,7 @@ double* illuminate(double* Rd, double* Ro, Object closest_object) {
             }
         }
 
-        //if its not in shadow
+
         if (in_shadow == 0) {
             double R[3];
 			reflect(light_to_obj,N,R);
