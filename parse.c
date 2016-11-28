@@ -1,3 +1,17 @@
+void parse_camera(FILE*);
+void parse_sphere(FILE*, Object*);
+void parse_plane(FILE*, Object*);
+void parse_light(FILE*, Light*);
+void skip_ws(FILE*);
+void expect_c(FILE*, int);
+int next_c(FILE*);
+char* next_string(FILE*);
+double next_number(FILE*);
+double* next_vector(FILE*);
+double clamp(double);
+void output_picture(FILE*);
+int line = 1;
+
 void read_scene(FILE* json) {
 	int c;
 	skip_ws(json);

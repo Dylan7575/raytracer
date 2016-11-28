@@ -1,5 +1,6 @@
 #include "raytrace.h"
 #include "parse.c"
+#include "functions.c"
 
 
 int main(int argc, char** argv) {
@@ -314,7 +315,7 @@ double* shade(Object current_object, double* rd, double* ro, int level, double i
         normalize(back_normal);
 
         double* next_ray = refraction(current_object.ior, 1.0, refracted_ray, back_normal);
-        /
+
         double best_t = INFINITY;
         Object* closest_object;
         for (int i=0; objects[i] != NULL; i++) {
