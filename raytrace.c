@@ -181,7 +181,7 @@ double* illuminate(double* Rd, double* Ro, Object closest_object) {
         int in_shadow = 0;
 		//seeing is object is in shadow
         for (int k=0; objects[k] != NULL; k++) {
-	    current_object=objects[i];
+	    current_object=objects[k];
             if (equals(*current_object, closest_object))
                 continue;
 
